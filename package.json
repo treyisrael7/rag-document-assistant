@@ -1,0 +1,14 @@
+{
+  "name": "rag-assistant",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev -w @rag-assistant/web",
+    "build:web": "npm run build -w @rag-assistant/web",
+    "build:shared": "npm run build -w @rag-assistant/shared"
+  }
+}
