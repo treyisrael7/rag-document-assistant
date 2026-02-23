@@ -8,7 +8,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from app.core.config import settings
 from app.core.rate_limit import RATE_LIMITS, PATH_TO_ROUTE, check_rate_limit
 
-PUBLIC_PATHS = {"/health", "/openapi.json", "/docs", "/redoc"}
+PUBLIC_PATHS = {"/", "/health", "/openapi.json", "/docs", "/redoc"}
 
 
 def _path_matches_route(path: str) -> str | None:
@@ -24,7 +24,7 @@ class DemoGateMiddleware(BaseHTTPMiddleware):
         if not settings.demo_key:
             return await call_next(request)
 
-        path = request.url.path
+        path = (request.url.path or "/").rstrip("/") or "/"
         if path in PUBLIC_PATHS:
             return await call_next(request)
 

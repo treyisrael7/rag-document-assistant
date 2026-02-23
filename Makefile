@@ -15,5 +15,11 @@ db-migrate:
 build:
 	docker compose build
 
+test:
+	cd apps/api && pytest -v
+
+test-docker:
+	docker compose build api && docker compose run --rm api python -m pytest -v
+
 clean:
 	docker compose down -v

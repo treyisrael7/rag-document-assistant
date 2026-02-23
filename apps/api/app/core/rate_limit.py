@@ -24,6 +24,11 @@ PATH_TO_ROUTE: dict[str, RouteKey] = {
 _store: defaultdict[str, list[float]] = defaultdict(list)
 
 
+def clear_store() -> None:
+    """Clear rate limit store (for testing only)."""
+    _store.clear()
+
+
 def _make_key(ip: str, user_id: str | None, route: RouteKey) -> str:
     if user_id:
         return f"{user_id}:{route}"

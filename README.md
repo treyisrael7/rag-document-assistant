@@ -46,6 +46,13 @@ curl -X POST http://localhost:8000/ask \
   -d '{"query":"hello"}'
 ```
 
+## Tests
+
+```bash
+make test-docker    # run in Docker (has all deps)
+make test          # or locally: cd apps/api && pytest -v
+```
+
 ## Rate limits
 
 | Route | Limit |
