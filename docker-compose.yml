@@ -26,6 +26,12 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/rag_assistant
       DATABASE_URL_SYNC: postgresql://postgres:postgres@postgres:5432/rag_assistant
+      DEMO_KEY: ${DEMO_KEY:-}
+      MAX_PDF_MB: ${MAX_PDF_MB:-10}
+      MAX_PDF_PAGES: ${MAX_PDF_PAGES:-20}
+      MAX_CHUNKS_PER_DOC: ${MAX_CHUNKS_PER_DOC:-300}
+      TOP_K_MAX: ${TOP_K_MAX:-8}
+      MAX_COMPLETION_TOKENS: ${MAX_COMPLETION_TOKENS:-500}
     depends_on:
       postgres:
         condition: service_healthy
