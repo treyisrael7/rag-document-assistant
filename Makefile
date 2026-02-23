@@ -10,7 +10,7 @@ logs:
 	docker compose logs -f
 
 db-migrate:
-	docker compose exec api python -c "print('DB migrations placeholder - add alembic or similar')"
+	docker compose exec api alembic upgrade head
 
 build:
 	docker compose build
