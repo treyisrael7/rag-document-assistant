@@ -1,10 +1,20 @@
 """Pytest fixtures."""
 
+import asyncio
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 
 from app.main import app
 from app.core.rate_limit import clear_store
+
+
+@pytest.fixture(scope="session")
+def event_loop():
+    """Use a single event loop for all async tests to avoid SQLAlchemy 'attached to different loop' errors."""
+    loop = asyncio.new_event_loop()
+    yield loop
+    loop.close()
 
 
 @pytest.fixture

@@ -12,6 +12,7 @@ from app.models.base import Base
 
 class DocumentStatus(str, Enum):
     PENDING = "pending"
+    UPLOADED = "uploaded"
     PROCESSING = "processing"
     READY = "ready"
     FAILED = "failed"
@@ -34,7 +35,7 @@ class Document(Base):
     filename: Mapped[str] = mapped_column(nullable=False)
     s3_key: Mapped[str] = mapped_column(nullable=False)
     status: Mapped[str] = mapped_column(
-        sa.Enum("pending", "processing", "ready", "failed", name="documentstatus"),
+        sa.Enum("pending", "uploaded", "processing", "ready", "failed", name="documentstatus"),
         nullable=False,
         default="pending",
     )

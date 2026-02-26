@@ -41,11 +41,18 @@ async def test_ingest_rate_limit(client, monkeypatch):
 async def test_presign_rate_limit(client, monkeypatch):
     """POST /documents/presign is rate limited to 10 per day."""
     monkeypatch.setattr(settings, "demo_key", None)
+    monkeypatch.setattr(settings, "s3_bucket", None)  # Use LocalStorage
+    presign_body = {
+        "user_id": "11111111-1111-1111-1111-111111111111",
+        "filename": "test.pdf",
+        "content_type": "application/pdf",
+        "file_size_bytes": 1024,
+    }
     for _ in range(10):
-        resp = await client.post("/documents/presign", json={})
+        resp = await client.post("/documents/presign", json=presign_body)
         assert resp.status_code == 200
 
-    resp = await client.post("/documents/presign", json={})
+    resp = await client.post("/documents/presign", json=presign_body)
     assert resp.status_code == 429
     assert resp.json()["limit"] == 10
     assert resp.json()["window"] == "day"

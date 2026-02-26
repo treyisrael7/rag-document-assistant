@@ -32,9 +32,8 @@ async def test_ingest_placeholder(client, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_presign_placeholder(client, monkeypatch):
-    """Presign returns placeholder."""
+async def test_presign_with_invalid_body_returns_422(client, monkeypatch):
+    """Presign returns 422 for invalid/missing body (validation error)."""
     monkeypatch.setattr(settings, "demo_key", None)
     resp = await client.post("/documents/presign", json={})
-    assert resp.status_code == 200
-    assert "message" in resp.json()
+    assert resp.status_code == 422

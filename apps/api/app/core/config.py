@@ -10,6 +10,12 @@ class Settings(BaseSettings):
     # Demo gate
     demo_key: str | None = None  # DEMO_KEY env; if set, require x-demo-key header on non-public routes
 
+    # AWS S3 (production)
+    aws_region: str = "us-east-1"
+    s3_bucket: str | None = None
+    aws_access_key_id: str | None = None
+    aws_secret_access_key: str | None = None
+
     # Hard limits (config via env)
     max_pdf_mb: int = 10  # MAX_PDF_MB
     max_pdf_pages: int = 20  # MAX_PDF_PAGES

@@ -53,6 +53,21 @@ make test-docker    # run in Docker (has all deps)
 make test          # or locally: cd apps/api && pytest -v
 ```
 
+## Document upload (PDFs)
+
+**Storage:** S3 in production (set AWS_* env vars). Local `./uploads` when AWS not configured.
+
+1. **POST /documents/presign** – Get presigned PUT URL
+   - Body: `{ "user_id": "uuid", "filename": "doc.pdf", "content_type": "application/pdf", "file_size_bytes": 12345 }`
+   - Validates: PDF only, ≤ MAX_PDF_MB
+   - Returns: `{ "document_id", "s3_key", "upload_url", "method": "PUT" }`
+
+2. **PUT** to `upload_url` – Upload the file (S3 or local)
+
+3. **POST /documents/confirm** – Mark as uploaded
+   - Body: `{ "user_id", "document_id", "s3_key" }`
+   - Verifies file exists, sets status=uploaded
+
 ## Rate limits
 
 | Route | Limit |
@@ -60,5 +75,6 @@ make test          # or locally: cd apps/api && pytest -v
 | POST /ask | 10/hour |
 | POST /documents/ingest | 3/day |
 | POST /documents/presign | 10/day |
+| POST /documents/confirm | 20/day |
 
 429 responses include `retry_after_seconds`. Pass `x-user-id` for per-user limits.

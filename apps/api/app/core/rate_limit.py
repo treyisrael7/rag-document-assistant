@@ -4,13 +4,14 @@ from collections import defaultdict
 from time import time
 from typing import Literal
 
-RouteKey = Literal["ask", "documents/ingest", "documents/presign"]
+RouteKey = Literal["ask", "documents/ingest", "documents/presign", "documents/confirm"]
 
 # (limit, window_seconds)
 RATE_LIMITS: dict[str, tuple[int, int]] = {
     "ask": (10, 3600),  # 10 per hour
     "documents/ingest": (3, 86400),  # 3 per day
     "documents/presign": (10, 86400),  # 10 per day
+    "documents/confirm": (20, 86400),  # 20 per day
 }
 
 # path (normalized, no trailing slash) -> route key
@@ -18,6 +19,7 @@ PATH_TO_ROUTE: dict[str, RouteKey] = {
     "/ask": "ask",
     "/documents/ingest": "documents/ingest",
     "/documents/presign": "documents/presign",
+    "/documents/confirm": "documents/confirm",
 }
 
 # in-memory: {key: [timestamp, ...]}
