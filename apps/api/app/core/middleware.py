@@ -6,15 +6,14 @@ from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.config import settings
-from app.core.rate_limit import RATE_LIMITS, PATH_TO_ROUTE, check_rate_limit
+from app.core.rate_limit import RATE_LIMITS, _path_to_route, check_rate_limit
 
 PUBLIC_PATHS = {"/", "/health", "/openapi.json", "/docs", "/redoc"}
 
 
 def _path_matches_route(path: str) -> str | None:
     """Return route key if path is rate-limited."""
-    path = path.rstrip("/") or "/"
-    return PATH_TO_ROUTE.get(path)
+    return _path_to_route(path)
 
 
 class DemoGateMiddleware(BaseHTTPMiddleware):

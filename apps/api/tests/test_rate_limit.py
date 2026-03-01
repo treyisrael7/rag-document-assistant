@@ -25,13 +25,45 @@ async def test_ask_rate_limit(client, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_ingest_rate_limit(client, monkeypatch):
-    """POST /documents/ingest is rate limited to 3 per day."""
+    """POST /documents/{id}/ingest is rate limited to 3 per day."""
     monkeypatch.setattr(settings, "demo_key", None)
-    for _ in range(3):
-        resp = await client.post("/documents/ingest", json={})
-        assert resp.status_code == 200
+    monkeypatch.setattr(settings, "openai_api_key", "sk-test")
+    monkeypatch.setattr(settings, "s3_bucket", None)
 
-    resp = await client.post("/documents/ingest", json={})
+    user_id = "11111111-1111-1111-1111-111111111111"
+    presign_body = {
+        "user_id": user_id,
+        "filename": "test.pdf",
+        "content_type": "application/pdf",
+        "file_size_bytes": 1024,
+    }
+    # Minimal valid PDF bytes for upload
+    pdf_bytes = b"%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF"
+    doc_ids = []
+    for _ in range(4):
+        pr = await client.post("/documents/presign", json=presign_body)
+        assert pr.status_code == 200
+        data = pr.json()
+        doc_id = data["document_id"]
+        doc_ids.append(doc_id)
+        key = data["s3_key"]
+        await client.put(f"/documents/upload-local?key={key}", content=pdf_bytes)
+        await client.post(
+            "/documents/confirm",
+            json={"user_id": user_id, "document_id": doc_id, "s3_key": key},
+        )
+
+    for i in range(3):
+        resp = await client.post(
+            f"/documents/{doc_ids[i]}/ingest",
+            json={"user_id": user_id},
+        )
+        assert resp.status_code == 200, f"Request {i+1}"
+
+    resp = await client.post(
+        f"/documents/{doc_ids[3]}/ingest",
+        json={"user_id": user_id},
+    )
     assert resp.status_code == 429
     assert resp.json()["limit"] == 3
     assert resp.json()["window"] == "day"

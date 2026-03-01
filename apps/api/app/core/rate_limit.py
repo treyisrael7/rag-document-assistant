@@ -14,13 +14,19 @@ RATE_LIMITS: dict[str, tuple[int, int]] = {
     "documents/confirm": (20, 86400),  # 20 per day
 }
 
-# path (normalized, no trailing slash) -> route key
-PATH_TO_ROUTE: dict[str, RouteKey] = {
-    "/ask": "ask",
-    "/documents/ingest": "documents/ingest",
-    "/documents/presign": "documents/presign",
-    "/documents/confirm": "documents/confirm",
-}
+def _path_to_route(path: str) -> RouteKey | None:
+    """Map path to route key. Supports /documents/{id}/ingest pattern."""
+    path = path.rstrip("/") or "/"
+    if path == "/ask":
+        return "ask"
+    if path == "/documents/presign":
+        return "documents/presign"
+    if path == "/documents/confirm":
+        return "documents/confirm"
+    # /documents/{uuid}/ingest
+    if path.startswith("/documents/") and path.endswith("/ingest"):
+        return "documents/ingest"
+    return None
 
 # in-memory: {key: [timestamp, ...]}
 _store: defaultdict[str, list[float]] = defaultdict(list)
@@ -52,7 +58,7 @@ def check_rate_limit(
     Returns (allowed, retry_after_seconds or None if allowed).
     """
     path = path.rstrip("/") or "/"
-    route = PATH_TO_ROUTE.get(path)
+    route = _path_to_route(path)
     if not route:
         return True, None
 

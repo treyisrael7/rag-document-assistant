@@ -23,12 +23,22 @@ async def test_ask_placeholder(client, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_ingest_placeholder(client, monkeypatch):
-    """Ingest returns placeholder."""
+async def test_ingest_requires_document_and_user(client, monkeypatch):
+    """Ingest returns 404 for unknown document, 422 for missing user_id."""
     monkeypatch.setattr(settings, "demo_key", None)
-    resp = await client.post("/documents/ingest", json={})
-    assert resp.status_code == 200
-    assert "message" in resp.json()
+    monkeypatch.setattr(settings, "openai_api_key", "sk-test")  # Avoid 503
+    # 422: missing user_id in body
+    resp = await client.post(
+        "/documents/11111111-1111-1111-1111-111111111111/ingest",
+        json={},
+    )
+    assert resp.status_code == 422
+    # 404: document not found
+    resp = await client.post(
+        "/documents/11111111-1111-1111-1111-111111111111/ingest",
+        json={"user_id": "11111111-1111-1111-1111-111111111111"},
+    )
+    assert resp.status_code == 404
 
 
 @pytest.mark.asyncio

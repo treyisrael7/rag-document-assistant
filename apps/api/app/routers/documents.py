@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import select
@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.db.session import get_db
 from app.models import Document, User
+from app.services.ingestion import run_ingestion
 from app.services.storage import get_storage
 
 router = APIRouter(prefix="/documents", tags=["documents"])
@@ -153,7 +154,48 @@ async def upload_local(key: str, request: Request):
     return PlainTextResponse("OK", status_code=200)
 
 
-@router.post("/ingest")
-async def ingest():
-    """Placeholder for document ingestion. Rate limit: 3/day."""
-    return {"message": "ingest endpoint placeholder"}
+class IngestInput(BaseModel):
+    user_id: uuid.UUID
+
+
+@router.post("/{document_id}/ingest")
+async def ingest(
+    document_id: uuid.UUID,
+    body: IngestInput,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Start document ingestion. Rate limit: 3/day.
+    Checks: doc ownership, status must be uploaded.
+    Sets status=processing and runs ingestion in background.
+    """
+    result = await db.execute(
+        select(Document).where(
+            Document.id == document_id,
+            Document.user_id == body.user_id,
+        )
+    )
+    doc = result.scalar_one_or_none()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    if doc.status != "uploaded":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Document must be uploaded to ingest; current status: {doc.status}",
+        )
+
+    if not settings.openai_api_key:
+        raise HTTPException(
+            status_code=503,
+            detail="OpenAI API not configured; set OPENAI_API_KEY",
+        )
+
+    doc.status = "processing"
+    doc.error_message = None
+    await db.commit()
+
+    background_tasks.add_task(run_ingestion, document_id)
+
+    return {"status": "processing", "document_id": str(document_id)}

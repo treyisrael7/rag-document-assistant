@@ -40,6 +40,7 @@ class Document(Base):
         default="pending",
     )
     page_count: Mapped[int | None] = mapped_column(nullable=True)
+    error_message: Mapped[str | None] = mapped_column(nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         server_default=text("now()"),
         nullable=False,

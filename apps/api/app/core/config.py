@@ -23,5 +23,14 @@ class Settings(BaseSettings):
     top_k_max: int = 8  # TOP_K_MAX
     max_completion_tokens: int = 500  # MAX_COMPLETION_TOKENS
 
+    # Chunking (configurable)
+    chunk_size: int = 512  # CHUNK_SIZE
+    chunk_overlap: int = 64  # CHUNK_OVERLAP
+
+    # OpenAI embeddings
+    openai_api_key: str | None = None  # OPENAI_API_KEY
+    openai_embedding_model: str = "text-embedding-3-small"  # OPENAI_EMBEDDING_MODEL
+    openai_embedding_dim: int = 1536  # OPENAI_EMBEDDING_DIM (must match DB vector column)
+
 
 settings = Settings()
