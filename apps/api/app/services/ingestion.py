@@ -25,15 +25,22 @@ def _extract_text_per_page(pdf_bytes: bytes) -> list[tuple[int, str]]:
         doc.close()
 
 
+def _is_word_char(c: str) -> bool:
+    """True if char is alphanumeric or hyphen/underscore (part of a word)."""
+    return c.isalnum() or c in "-_"
+
+
 def _chunk_text(
     page_texts: list[tuple[int, str]],
 ) -> list[tuple[int, str]]:
     """
-    Chunk text with configurable size and overlap.
+    Chunk text with configurable size and overlap, preferring word boundaries.
+    Filters out tiny chunks (e.g. PDF footers like "Page 2 of 2").
     Returns [(page_number, chunk_text), ...]
     """
     chunk_size = settings.chunk_size
     overlap = settings.chunk_overlap
+    min_chars = settings.min_chunk_chars
     step = max(1, chunk_size - overlap)
 
     chunks: list[tuple[int, str]] = []
@@ -44,8 +51,24 @@ def _chunk_text(
         start = 0
         while start < len(text):
             end = min(start + chunk_size, len(text))
+
+            # Prefer word boundary at end: avoid cutting mid-word
+            if end < len(text) and _is_word_char(text[end]):
+                last_space = text.rfind(" ", start, end)
+                if last_space > start:
+                    end = last_space + 1
+
+            # If we're starting mid-word, back up to include the whole word (only if we find a space)
+            if start > 0 and _is_word_char(text[start - 1]):
+                prev_space = text.rfind(" ", 0, start)
+                if prev_space >= 0:
+                    start = prev_space + 1
+                    if start >= end:
+                        start += step
+                        continue
+
             chunk = text[start:end].strip()
-            if chunk:
+            if chunk and len(chunk) >= min_chars:
                 chunks.append((page_num, chunk))
             start += step
 

@@ -36,6 +36,12 @@ services:
       MAX_CHUNKS_PER_DOC: ${MAX_CHUNKS_PER_DOC:-300}
       TOP_K_MAX: ${TOP_K_MAX:-8}
       MAX_COMPLETION_TOKENS: ${MAX_COMPLETION_TOKENS:-500}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      OPENAI_EMBEDDING_DIM: ${OPENAI_EMBEDDING_DIM:-1536}
+      CHUNK_SIZE: ${CHUNK_SIZE:-512}
+      CHUNK_OVERLAP: ${CHUNK_OVERLAP:-128}
+      MIN_CHUNK_CHARS: ${MIN_CHUNK_CHARS:-25}
     depends_on:
       postgres:
         condition: service_healthy

@@ -25,7 +25,8 @@ class Settings(BaseSettings):
 
     # Chunking (configurable)
     chunk_size: int = 512  # CHUNK_SIZE
-    chunk_overlap: int = 64  # CHUNK_OVERLAP
+    chunk_overlap: int = 128  # CHUNK_OVERLAP (higher reduces mid-word splits)
+    min_chunk_chars: int = 25  # MIN_CHUNK_CHARS (filter tiny chunks like "Page 2 of 2")
 
     # OpenAI embeddings
     openai_api_key: str | None = None  # OPENAI_API_KEY
