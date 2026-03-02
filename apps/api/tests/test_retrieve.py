@@ -75,7 +75,7 @@ async def test_retrieve_rejects_top_k_exceeds_max(client, demo_key_off, monkeypa
             "user_id": str(user_id),
             "document_id": str(doc_id),
             "query": "test",
-            "top_k": 10,
+            "top_k": 6,  # > top_k_max (5), but <= Pydantic le=8 so we hit the handler
         },
     )
     assert resp.status_code == 400

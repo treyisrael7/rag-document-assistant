@@ -49,7 +49,7 @@ Or locally: `cd apps/api && alembic upgrade head`
    .\scripts\test-retrieve.ps1
    ```
 
-Or use `scripts/reingest.ps1` to re-process, `scripts/chunk-stats.ps1` for ingestion stats.
+Or use `scripts/reingest.ps1` to re-process, `scripts/chunk-stats.ps1` for ingestion stats. For grounded Q&A with citations: `scripts/test-ask.ps1`.
 
 ## Demo gate & API access
 
@@ -64,6 +64,11 @@ curl -X POST http://localhost:8000/retrieve \
   -H "x-demo-key: your-secret-key" \
   -H "Content-Type: application/json" \
   -d '{"user_id":"uuid","document_id":"uuid","query":"What are the qualifications?"}'
+
+curl -X POST http://localhost:8000/ask \
+  -H "x-demo-key: your-secret-key" \
+  -H "Content-Type: application/json" \
+  -d '{"user_id":"uuid","document_id":"uuid","question":"What is the salary range?"}'
 ```
 
 ## Document upload flow

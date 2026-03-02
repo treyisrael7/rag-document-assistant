@@ -1,5 +1,8 @@
 """Tests for rate limit middleware."""
 
+import uuid
+from unittest.mock import AsyncMock, patch
+
 import pytest
 
 from app.core.config import settings
@@ -8,13 +11,32 @@ from app.core.config import settings
 @pytest.mark.asyncio
 async def test_ask_rate_limit(client, monkeypatch):
     """POST /ask is rate limited to 10 per hour."""
-    monkeypatch.setattr(settings, "demo_key", None)
-    for i in range(10):
-        resp = await client.post("/ask", json={})
-        assert resp.status_code == 200, f"Request {i+1} should succeed"
+    from app.db.base import async_session_maker
+    from app.models import Document, User
 
-    resp = await client.post("/ask", json={})
-    assert resp.status_code == 429
+    monkeypatch.setattr(settings, "demo_key", None)
+    monkeypatch.setattr(settings, "openai_api_key", "sk-test")
+
+    user_id = uuid.uuid4()
+    async with async_session_maker() as db:
+        user = User(id=user_id, email="ratelimit@t.local")
+        db.add(user)
+        await db.commit()
+    async with async_session_maker() as db:
+        doc = Document(user_id=user_id, filename="x.pdf", s3_key="x", status="ready")
+        db.add(doc)
+        await db.flush()
+        doc_id = doc.id
+        await db.commit()
+
+    body = {"user_id": str(user_id), "document_id": str(doc_id), "question": "test?"}
+    with patch("app.routers.ask.retrieve_chunks", new_callable=AsyncMock, return_value=[]):
+        with patch("app.routers.ask.embed_query", return_value=[0.1] * 1536):
+            for i in range(10):
+                resp = await client.post("/ask", json=body)
+                assert resp.status_code == 200, f"Request {i+1} should succeed"
+
+            resp = await client.post("/ask", json=body)
     data = resp.json()
     assert data["detail"] == "Rate limit exceeded"
     assert "retry_after_seconds" in data
@@ -104,17 +126,37 @@ async def test_non_rate_limited_paths(client, monkeypatch):
 @pytest.mark.asyncio
 async def test_different_users_separate_limits(client, monkeypatch):
     """Different x-user-id get separate rate limits."""
+    from app.db.base import async_session_maker
+    from app.models import Document, User
+
     monkeypatch.setattr(settings, "demo_key", None)
-    for _ in range(10):
-        resp = await client.post(
-            "/ask", json={}, headers={"x-user-id": "user-a"}
-        )
-        assert resp.status_code == 200
+    monkeypatch.setattr(settings, "openai_api_key", "sk-test")
 
-    # user-a is limited
-    resp = await client.post("/ask", json={}, headers={"x-user-id": "user-a"})
-    assert resp.status_code == 429
+    user_id = uuid.uuid4()
+    async with async_session_maker() as db:
+        user = User(id=user_id, email="limit-users@t.local")
+        db.add(user)
+        await db.commit()
+    async with async_session_maker() as db:
+        doc = Document(user_id=user_id, filename="x.pdf", s3_key="x", status="ready")
+        db.add(doc)
+        await db.flush()
+        doc_id = doc.id
+        await db.commit()
 
-    # user-b still has quota
-    resp = await client.post("/ask", json={}, headers={"x-user-id": "user-b"})
-    assert resp.status_code == 200
+    body = {"user_id": str(user_id), "document_id": str(doc_id), "question": "test?"}
+    with patch("app.routers.ask.retrieve_chunks", new_callable=AsyncMock, return_value=[]):
+        with patch("app.routers.ask.embed_query", return_value=[0.1] * 1536):
+            for _ in range(10):
+                resp = await client.post(
+                    "/ask", json=body, headers={"x-user-id": "user-a"}
+                )
+                assert resp.status_code == 200
+
+            # user-a is limited
+            resp = await client.post("/ask", json=body, headers={"x-user-id": "user-a"})
+            assert resp.status_code == 429
+
+            # user-b still has quota
+            resp = await client.post("/ask", json=body, headers={"x-user-id": "user-b"})
+            assert resp.status_code == 200

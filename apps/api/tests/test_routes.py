@@ -14,12 +14,11 @@ async def test_root(client):
 
 
 @pytest.mark.asyncio
-async def test_ask_placeholder(client, monkeypatch):
-    """Ask returns placeholder (when DEMO_KEY not set or key provided)."""
+async def test_ask_requires_body(client, monkeypatch):
+    """Ask returns 422 for missing body (validation error)."""
     monkeypatch.setattr(settings, "demo_key", None)  # ensure no gate
     resp = await client.post("/ask", json={})
-    assert resp.status_code == 200
-    assert resp.json().get("message") == "ask endpoint placeholder"
+    assert resp.status_code == 422
 
 
 @pytest.mark.asyncio

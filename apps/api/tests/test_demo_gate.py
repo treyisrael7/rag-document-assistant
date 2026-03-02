@@ -16,16 +16,32 @@ async def test_health_public_without_key(client):
 async def test_protected_route_without_demo_key(client, monkeypatch):
     """When DEMO_KEY is not set, protected routes work without header."""
     monkeypatch.setattr(settings, "demo_key", None)
-    resp = await client.post("/ask", json={})
-    assert resp.status_code == 200
+    resp = await client.post(
+        "/ask",
+        json={
+            "user_id": "11111111-1111-1111-1111-111111111111",
+            "document_id": "11111111-1111-1111-1111-111111111111",
+            "question": "test",
+        },
+    )
+    # 422 = validation, 404 = doc not found; either means we passed the gate (no 401)
+    assert resp.status_code != 401
 
 
 @pytest.mark.asyncio
 async def test_protected_route_with_demo_key(client, monkeypatch):
     """When DEMO_KEY is set, valid key allows access."""
     monkeypatch.setattr(settings, "demo_key", "test-secret")
-    resp = await client.post("/ask", json={}, headers={"x-demo-key": "test-secret"})
-    assert resp.status_code == 200
+    resp = await client.post(
+        "/ask",
+        json={
+            "user_id": "11111111-1111-1111-1111-111111111111",
+            "document_id": "11111111-1111-1111-1111-111111111111",
+            "question": "test",
+        },
+        headers={"x-demo-key": "test-secret"},
+    )
+    assert resp.status_code != 401
 
 
 @pytest.mark.asyncio

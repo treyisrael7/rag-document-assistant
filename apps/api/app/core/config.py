@@ -34,5 +34,8 @@ class Settings(BaseSettings):
     openai_embedding_model: str = "text-embedding-3-small"  # OPENAI_EMBEDDING_MODEL
     openai_embedding_dim: int = 1536  # OPENAI_EMBEDDING_DIM (must match DB vector column)
 
+    # OpenAI chat (Q&A)
+    openai_chat_model: str = "gpt-4o-mini"  # OPENAI_CHAT_MODEL
+
 
 settings = Settings()
