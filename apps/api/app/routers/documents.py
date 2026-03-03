@@ -18,6 +18,66 @@ router = APIRouter(prefix="/documents", tags=["documents"])
 ALLOWED_CONTENT_TYPE = "application/pdf"
 
 
+class DocumentSummary(BaseModel):
+    id: str
+    filename: str
+    status: str
+    page_count: int | None
+    error_message: str | None
+    created_at: str
+
+
+@router.get("", response_model=list[DocumentSummary])
+async def list_documents(
+    user_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """List documents for a user."""
+    result = await db.execute(
+        select(Document)
+        .where(Document.user_id == user_id)
+        .order_by(Document.created_at.desc())
+    )
+    docs = result.scalars().all()
+    return [
+        DocumentSummary(
+            id=str(d.id),
+            filename=d.filename,
+            status=d.status,
+            page_count=d.page_count,
+            error_message=d.error_message,
+            created_at=d.created_at.isoformat() if d.created_at else "",
+        )
+        for d in docs
+    ]
+
+
+@router.get("/{document_id}", response_model=DocumentSummary)
+async def get_document(
+    document_id: uuid.UUID,
+    user_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Get single document for status polling."""
+    result = await db.execute(
+        select(Document).where(
+            Document.id == document_id,
+            Document.user_id == user_id,
+        )
+    )
+    doc = result.scalar_one_or_none()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return DocumentSummary(
+        id=str(doc.id),
+        filename=doc.filename,
+        status=doc.status,
+        page_count=doc.page_count,
+        error_message=doc.error_message,
+        created_at=doc.created_at.isoformat() if doc.created_at else "",
+    )
+
+
 class PresignInput(BaseModel):
     user_id: uuid.UUID
     filename: str = Field(..., min_length=1)

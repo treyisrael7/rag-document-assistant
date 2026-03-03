@@ -1,8 +1,18 @@
+from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Project root (apps/api/app/core/config.py -> 4 levels up)
+_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+_ROOT_ENV = str(_ROOT / ".env")
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    # Load root .env so OPENAI_API_KEY etc work when API runs from apps/api/ or project root
+    model_config = SettingsConfigDict(
+        env_file=_ROOT_ENV,
+        env_file_encoding="utf-8",
+    )
 
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/rag_assistant"
     database_url_sync: str = "postgresql://postgres:postgres@localhost:5432/rag_assistant"

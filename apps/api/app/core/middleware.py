@@ -23,6 +23,10 @@ class DemoGateMiddleware(BaseHTTPMiddleware):
         if not settings.demo_key:
             return await call_next(request)
 
+        # Allow OPTIONS (CORS preflight) - browser doesn't send custom headers on preflight
+        if request.method == "OPTIONS":
+            return await call_next(request)
+
         path = (request.url.path or "/").rstrip("/") or "/"
         if path in PUBLIC_PATHS:
             return await call_next(request)
